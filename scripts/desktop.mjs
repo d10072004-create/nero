@@ -1,10 +1,23 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("..", import.meta.url));
+
+function electronBinary() {
+  try {
+    return require("electron");
+  } catch (error) {
+    const message = String(error?.message || error);
+    if (!message.includes("failed to install")) throw error;
+    const install = fileURLToPath(new URL("../node_modules/electron/install.js", import.meta.url));
+    const result = spawnSync(process.execPath, [install], { cwd: root, stdio: "inherit" });
+    if (result.status !== 0) process.exit(result.status ?? 1);
+    return require("electron");
+  }
+}
 
 async function serving() {
   try {
@@ -31,7 +44,7 @@ if (!(await serving())) {
   process.exit(1);
 }
 
-const electron = require("electron");
+const electron = electronBinary();
 const app = spawn(electron, ["."], { cwd: root, stdio: "inherit" });
 app.on("exit", (code) => {
   vite?.kill();
