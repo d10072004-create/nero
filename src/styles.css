@@ -38,6 +38,15 @@
     line-height: 1.5;
   }
 
+  html.nero-pet,
+  html.nero-pet body {
+    background: transparent;
+  }
+
+  .nero-drag {
+    -webkit-app-region: drag;
+  }
+
   ::selection {
     background: color-mix(in oklab, var(--color-accent) 35%, transparent);
     color: var(--color-fg);

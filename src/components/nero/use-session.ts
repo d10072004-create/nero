@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { askNero, speakNero, transcribeNero } from "@/lib/nero/ai";
 import { localAnswer } from "@/lib/nero/brain";
+import { neroDesktop } from "@/lib/nero/desktop";
 import { detectTier, modelForTier } from "@/lib/nero/hardware";
 import { copyFor } from "@/lib/nero/i18n";
 import { useNeroStore } from "@/lib/nero/store";
@@ -100,6 +101,28 @@ function rmsOf(samples: Float32Array): number {
   return Math.sqrt(sum / (samples.length || 1));
 }
 
+function waitVoices(): Promise<SpeechSynthesisVoice[]> {
+  const synth = window.speechSynthesis;
+  const ready = synth.getVoices();
+  if (ready.length > 0) return Promise.resolve(ready);
+  return new Promise((resolve) => {
+    const finish = () => {
+      synth.removeEventListener("voiceschanged", finish);
+      resolve(synth.getVoices());
+    };
+    synth.addEventListener("voiceschanged", finish);
+    window.setTimeout(finish, 500);
+  });
+}
+
+function pickVoice(voices: SpeechSynthesisVoice[], lang: string, systemVoice: string) {
+  return (
+    voices.find((item) => item.voiceURI === systemVoice) ??
+    voices.find((item) => item.lang.toLowerCase().startsWith(lang)) ??
+    (lang === "uk" ? voices.find((item) => item.lang.toLowerCase().startsWith("ru")) : undefined) ??
+    voices[0]
+  );
+}
 function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
@@ -214,20 +237,34 @@ export function useNeroSession() {
           push("system", copyFor(useNeroStore.getState().lang).voiceFallback);
         }
       }
+      const desk = neroDesktop();
+      if (desk) {
+        const heard = await desk.speak(line, rate);
+        if (heard) return;
+      }
       await new Promise<void>((resolve) => {
         const utterance = new SpeechSynthesisUtterance(line);
-        utterance.lang = LOCALE[lang];
+        const finish = () => resolve();
         utterance.rate = rate / 100;
         utterance.pitch = pitch / 100;
-        const voices = window.speechSynthesis.getVoices();
-        const picked =
-          voices.find((item) => item.voiceURI === systemVoice) ??
-          voices.find((item) => item.lang.toLowerCase().startsWith(lang));
-        if (picked) utterance.voice = picked;
-        utterance.onend = () => resolve();
-        utterance.onerror = () => resolve();
-        window.speechSynthesis.resume();
-        window.speechSynthesis.speak(utterance);
+        void waitVoices().then((voices) => {
+          const picked = pickVoice(voices, lang, systemVoice);
+          if (picked) {
+            utterance.voice = picked;
+            utterance.lang = picked.lang;
+          } else {
+            utterance.lang = LOCALE[lang];
+          }
+          utterance.onend = finish;
+          utterance.onerror = finish;
+          const synth = window.speechSynthesis;
+          synth.cancel();
+          synth.resume();
+          synth.speak(utterance);
+          window.setTimeout(() => {
+            if (synth.paused) synth.resume();
+          }, 250);
+        });
       });
     },
     [push, stopSpeech],
@@ -303,7 +340,7 @@ export function useNeroSession() {
                   ? copyNow.cloudCredits
                   : copyNow.cloudFailed;
             push("system", note);
-            reply = local.reply;
+            reply = local.handled ? local.reply : note;
           } else {
             reply = cloud.text;
           }

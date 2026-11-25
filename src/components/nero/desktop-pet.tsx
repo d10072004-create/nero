@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { neroDesktop } from "@/lib/nero/desktop";
 
 type PipWindow = Window & { document: Document };
 
@@ -7,7 +8,7 @@ type PipApi = {
 };
 
 export function canLeaveDesktop(): boolean {
-  return typeof window !== "undefined" && "documentPictureInPicture" in window;
+  return neroDesktop() !== null || (typeof window !== "undefined" && "documentPictureInPicture" in window);
 }
 
 export function DesktopPet({

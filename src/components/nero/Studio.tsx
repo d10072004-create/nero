@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { DesktopPet, canLeaveDesktop } from "@/components/nero/desktop-pet";
 import { NeroActor } from "@/components/nero/figure";
+import { neroDesktop } from "@/lib/nero/desktop";
 import { StageTools } from "@/components/nero/tools";
 import { useNeroSession } from "@/components/nero/use-session";
 import { modelForTier } from "@/lib/nero/hardware";
@@ -98,6 +99,12 @@ export function Studio() {
   }, [desktopOn, copy.desktopUnsupported, setDesktopOn]);
 
   const openDesktop = () => {
+    const desk = neroDesktop();
+    if (desk) {
+      setDesktopNote("");
+      void desk.openPet();
+      return;
+    }
     if (!canLeaveDesktop()) {
       setDesktopNote(copy.desktopUnsupported);
       return;
@@ -124,13 +131,6 @@ export function Studio() {
           <Brain className="size-4" aria-hidden />
           {copy.brains[settings.brain]}
         </button>
-        <a
-          href="/Nero.zip"
-          download="Nero.zip"
-          className="ml-auto flex h-11 items-center gap-2 rounded-md border border-line bg-accent px-3 text-sm text-bg"
-        >
-          Nero.zip
-        </a>
         <button
           type="button"
           className="flex h-11 items-center gap-2 rounded-md border border-line bg-elevated px-3 text-sm text-fg"
