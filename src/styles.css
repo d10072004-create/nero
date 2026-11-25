@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0e0f12;
+  --color-elevated: #1b1c21;
+  --color-panel: #141519;
+  --color-fg: #eceae6;
+  --color-muted: #a39e96;
+  --color-subtle: #7a756e;
+  --color-line: #2c2d33;
+  --color-accent: #d7dde4;
+  --color-accent-fg: #141518;
+  --color-live: #8fbfa8;
+  --color-warn: #d1a15a;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Newsreader", ui-serif, Georgia, serif;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html,
+  body {
+    height: 100%;
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-accent) 35%, transparent);
+    color: var(--color-fg);
+  }
+}
+
+@keyframes nero-breathe {
+  0%,
+  100% {
+    transform: translate3d(var(--nero-x), 0, 0) scaleY(1);
+  }
+  50% {
+    transform: translate3d(var(--nero-x), 0, 0) scaleY(1.012);
+  }
+}
+
+.nero-breathe {
+  animation: nero-breathe 4.4s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+.nero-figure {
+  transform-origin: 50% 100%;
+  --nero-x: 0px;
+  --nero-face: 1;
+}
+
+.nero-figure[data-walking="false"][data-state="idle"],
+.nero-figure[data-walking="false"][data-state="speaking"] {
+  animation: nero-breathe 4.4s ease-in-out infinite;
+}
+
+.nero-figure[data-walking="false"][data-state="listening"] {
+  animation: nero-listen 3.2s ease-in-out infinite;
+}
+
+.nero-figure[data-walking="false"][data-state="thinking"] {
+  animation: nero-think 5s ease-in-out infinite;
+}
+
+.nero-figure[data-walking="true"] {
+  animation: none;
+}
+
+@keyframes nero-listen {
+  0%,
+  100% {
+    transform: translate3d(var(--nero-x), 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(var(--nero-x), 0, 0) rotate(-1.2deg);
+  }
+}
+
+@keyframes nero-think {
+  0%,
+  100% {
+    transform: translate3d(var(--nero-x), 0, 0) rotate(0.6deg);
+  }
+  50% {
+    transform: translate3d(var(--nero-x), 0, 0) rotate(-0.8deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nero-breathe,
+  .nero-figure {
+    animation: none;
+  }
+}
+
+input[type="range"] {
+  accent-color: var(--color-accent);
+  width: 100%;
+  height: 2rem;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
